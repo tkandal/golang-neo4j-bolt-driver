@@ -7,8 +7,8 @@ import (
     "math"
     "reflect"
 
-    "github.com/johnnadratowski/golang-neo4j-bolt-driver/errors"
-    "github.com/johnnadratowski/golang-neo4j-bolt-driver/structures"
+    "github.com/tkandal/golang-neo4j-bolt-driver/errors"
+    "github.com/tkandal/golang-neo4j-bolt-driver/structures"
 )
 
 const (
