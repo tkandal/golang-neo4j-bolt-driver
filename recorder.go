@@ -65,7 +65,6 @@ func (r *recorder) Read(b []byte) (n int, err error) {
 		if err != nil {
 			r.recordErr(err, false)
 		}
-
 		return numRead, err
 	}
 
@@ -79,7 +78,8 @@ func (r *recorder) Read(b []byte) (n int, err error) {
 
 	for i := 0; i < len(b); i++ {
 		if len(event.Event) == 0 {
-			return i, errors.New("Attempted to read past current event in recorder! Bytes: %s. Recorder %#v, Event; %#v", b, r, event)
+			return i, errors.New("Attempted to read past current event in recorder! Bytes: %s. Recorder %#v, Event; %#v",
+			    b, r, event)
 		}
 		b[i] = event.Event[0]
 		event.Event = event.Event[1:]
@@ -95,12 +95,12 @@ func (r *recorder) Read(b []byte) (n int, err error) {
 // Close the net conn, outputting the recording
 func (r *recorder) Close() error {
 	if r.Conn != nil {
-		err := r.flush()
-		if err != nil {
+		if err := r.flush(); err != nil {
 			return err
 		}
 		return r.Conn.Close()
-	} else if len(r.events) > 0 {
+	}
+	if len(r.events) > 0 {
 		if r.currentEvent != len(r.events) {
 			return errors.New("Didn't read all of the events in the recorder on close! %#v", r)
 		}
@@ -122,17 +122,16 @@ func (r *recorder) Write(b []byte) (n int, err error) {
 		if numWritten > 0 {
 			r.record(b[:numWritten], true)
 		}
-
 		if err != nil {
 			r.recordErr(err, true)
 		}
-
 		return numWritten, err
 	}
 
 	if r.currentEvent >= len(r.events) {
 		return 0, errors.New("Trying to write past all of the events in the recorder! %#v", r)
 	}
+
 	event := r.events[r.currentEvent]
 	if !event.IsWrite {
 		return 0, errors.New("Recorder expected Write, got Read! %#v, Event: %#v", r, event)
@@ -201,12 +200,10 @@ func (r *recorder) flush() error {
 }
 
 func (r *recorder) print() {
-	fmt.Println("PRINTING RECORDING " + r.name)
+	fmt.Printf("PRINTING RECORDING %v\n", r.name)
 
 	for _, event := range r.events {
-
-		fmt.Println()
-		fmt.Println()
+	    fmt.Printf("\n\n")
 
 		typee := "READ"
 		if event.IsWrite {
@@ -221,7 +218,7 @@ func (r *recorder) print() {
 			fmt.Printf("Decoded Data:\n\n%+v\n\n", decoded)
 		}
 
-		fmt.Print("Encoded Bytes:\n\n")
+		fmt.Printf("Encoded Bytes:\n\n")
 		fmt.Print(sprintByteHex(event.Event))
 		if !event.Completed {
 			fmt.Println("EVENT NEVER COMPLETED!!!!!!!!!!!!!!!")
@@ -230,9 +227,7 @@ func (r *recorder) print() {
 		if event.Error != nil {
 			fmt.Printf("ERROR OCCURRED DURING EVENT!!!!!!!\n\nError: %s\n", event.Error)
 		}
-
-		fmt.Println()
-		fmt.Println()
+        fmt.Printf("\n\n")
 	}
 
 	fmt.Println("RECORDING END " + r.name)

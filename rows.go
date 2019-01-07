@@ -154,8 +154,7 @@ func (r *boltRows) Close() error {
 
 		// Clear out all unconsumed messages if we
 		// never finished consuming them.
-		_, _, err := r.statement.conn.consumeAllMultiple(numConsume)
-		if err != nil {
+		if _, _, err := r.statement.conn.consumeAllMultiple(numConsume); err != nil {
 			return errors.Wrap(err, "An error occurred clearing out unconsumed stream")
 		}
 	}
