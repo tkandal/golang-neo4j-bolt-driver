@@ -2,8 +2,13 @@
 [![Build Status](https://travis-ci.org/tkandal/golang-neo4j-bolt-driver.svg?branch=master)](https://travis-ci.org/tkandal/golang-neo4j-bolt-driver)
 [![GoDoc](https://godoc.org/github.com/tkandal/golang-neo4j-bolt-driver?status.svg)](https://godoc.org/github.com/tkandal/golang-neo4j-bolt-driver)
 
-
-**ANNOUNCEMENT: I must apologize to the community for not being more responsive.  Because of personal life events I am really not able to properly maintain this codebase.  Certain other events lead me to believe an official Neo4J Golang driver was to be released soon, but it seems like that may not necessarily be the case.  Since I am unable to properly maintain this codebase at this juncture, at this point I think it makes sense to open up this repo to collaborators who are interested in helping with maintenance.  Please feel free to email me directly if you're interested.**
+This is a fork of https://github.com/johnnadratowski/golang-neo4j-bolt-driver, Golang
+Neo4J Bolt Driver.
+Since John Nadratowski is not able to maintain his project I have tried to find
+and fix bugs.
+I have successfully used this driver in personal and in-house projects at work.
+The driver still have some quirks and contains code that is not very Go-ish.  I hope
+to find time to fix these issues.
 
 Implements the Neo4J Bolt Protocol specification:
 As of the time of writing this, the current version is v3.1.0-M02
