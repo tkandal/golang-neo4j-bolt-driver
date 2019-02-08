@@ -107,19 +107,19 @@ func (e Encoder) Write(p []byte) (n int, err error) {
 
     n, err = e.buf.Write(p)
     if err != nil {
-        err = errors.Wrap(err, "An error occurred writing to encoder temp buffer")
+        err = errors.Wrap(err, "an error occurred while writing to encoder temp buffer")
         return n, err
     }
 
     length := e.buf.Len()
     for length >= int(e.chunkSize) {
         if err := binary.Write(e.w, binary.BigEndian, e.chunkSize); err != nil {
-            return 0, errors.Wrap(err, "An error occured writing chunksize")
+            return 0, errors.Wrap(err, "an error occured while writing chunksize")
         }
 
         numWritten, err := e.w.Write(e.buf.Next(int(e.chunkSize)))
         if err != nil {
-            err = errors.Wrap(err, "An error occured writing a chunk")
+            err = errors.Wrap(err, "an error occured while writing a chunk")
         }
 
         return numWritten, err
@@ -133,17 +133,17 @@ func (e Encoder) flush() error {
     length := e.buf.Len()
     if length > 0 {
         if err := binary.Write(e.w, binary.BigEndian, uint16(length)); err != nil {
-            return errors.Wrap(err, "An error occured writing length bytes during flush")
+            return errors.Wrap(err, "an error occured while writing length bytes during flush")
         }
 
         if _, err := e.buf.WriteTo(e.w); err != nil {
-            return errors.Wrap(err, "An error occured writing message bytes during flush")
+            return errors.Wrap(err, "an error occured while writing message bytes during flush")
         }
     }
 
     _, err := e.w.Write(EndMessage)
     if err != nil {
-        return errors.Wrap(err, "An error occurred ending encoding message")
+        return errors.Wrap(err, "an error occurred while ending encoding message")
     }
     e.buf.Reset()
 
@@ -197,7 +197,7 @@ func (e Encoder) encode(iVal interface{}) error {
         case reflect.Uint64:
             val := reflect.ValueOf(iVal).Uint()
             if val > math.MaxInt64 {
-                return errors.New("Integer too big: %d. Max integer supported: %d", val, int64(math.MaxInt64))
+                return errors.New("integer too big %d; max integer supported %d", val, int64(math.MaxInt64))
             }
             err = e.encodeInt(int64(val))
         case reflect.Float32:
@@ -212,13 +212,13 @@ func (e Encoder) encode(iVal interface{}) error {
             for i := 0; i < s.Len(); i++ {
                 newSlice[i] = s.Index(i).Interface()
             }
-            err =  e.encodeSlice(newSlice)
+            err = e.encodeSlice(newSlice)
         case reflect.Map:
             err = e.encodeMap(reflect.ValueOf(iVal).Interface().(map[string]interface{}))
         case reflect.Struct:
             err = e.encodeStructure(reflect.ValueOf(iVal).Interface().(structures.Structure))
         default:
-            return errors.New("Unrecognized type when encoding data for Bolt transport: %T %+v", iVal, iVal)
+            return errors.New("unrecognized type when encoding data for bolt transport; %T %+v", iVal, iVal)
         }
     }
 
@@ -344,10 +344,10 @@ func (e Encoder) encodeInt(val int64) error {
         }
         err = binary.Write(e, binary.BigEndian, val)
     default:
-        return errors.New("Int too long to write: %d", val)
+        return errors.New("integer too long to write %d", val)
     }
     if err != nil {
-        return errors.Wrap(err, "An error occured writing an int to bolt")
+        return errors.Wrap(err, "an error occured while writing an integer to bolt")
     }
     return err
 }
@@ -359,7 +359,7 @@ func (e Encoder) encodeFloat(val float64) error {
 
     err := binary.Write(e, binary.BigEndian, val)
     if err != nil {
-        return errors.Wrap(err, "An error occured writing a float to bolt")
+        return errors.Wrap(err, "an error occured while writing a float to bolt")
     }
 
     return err
@@ -401,7 +401,7 @@ func (e Encoder) encodeString(val string) error {
         }
         _, err = e.Write(bytes)
     default:
-        return errors.New("String too long to write: %s", val)
+        return errors.New("string is too long to write %s", val)
     }
     return err
 }
@@ -435,7 +435,7 @@ func (e Encoder) encodeSlice(val []interface{}) error {
             return err
         }
     default:
-        return errors.New("Slice too long to write: %+v", val)
+        return errors.New("slice is too long to write %+v", val)
     }
 
     // Encode Slice values
@@ -477,7 +477,7 @@ func (e Encoder) encodeMap(val map[string]interface{}) error {
             return err
         }
     default:
-        return errors.New("Map too long to write: %+v", val)
+        return errors.New("map is too long to write %+v", val)
     }
 
     // Encode Map values
@@ -517,17 +517,17 @@ func (e Encoder) encodeStructure(val structures.Structure) error {
             return err
         }
     default:
-        return errors.New("Structure too long to write: %+v", val)
+        return errors.New("structure is too long to write %+v", val)
     }
 
     _, err := e.Write([]byte{byte(val.Signature())})
     if err != nil {
-        return errors.Wrap(err, "An error occurred writing to encoder a struct field")
+        return errors.Wrap(err, "an error occurred while writing to encoder a struct field")
     }
 
     for _, field := range fields {
         if err := e.encode(field); err != nil {
-            return errors.Wrap(err, "An error occurred encoding a struct field")
+            return errors.Wrap(err, "an error occurred while encoding a struct field")
         }
     }
 

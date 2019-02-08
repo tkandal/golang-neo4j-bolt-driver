@@ -41,7 +41,7 @@ func (d Decoder) read() (*bytes.Buffer, error) {
     for {
         lengthBytes := make([]byte, 2)
         if numRead, err := io.ReadFull(d.r, lengthBytes); numRead != 2 {
-            return nil, errors.Wrap(err, "Couldn't read expected bytes for message length. Read: %d Expected: 2.", numRead)
+            return nil, errors.Wrap(err, "couldn't read expected bytes for message length; read %d; expected 2", numRead)
         }
 
         // Chunk header contains length of current message
@@ -53,15 +53,15 @@ func (d Decoder) read() (*bytes.Buffer, error) {
 
         data, err := d.readData(messageLen)
         if err != nil {
-            return output, errors.Wrap(err, "An error occurred reading message data")
+            return output, errors.Wrap(err, "an error occurred reading message data")
         }
 
         numWritten, err := output.Write(data)
         if numWritten < len(data) {
-            return output, errors.New("Didn't write full data on output. Expected: %d Wrote: %d", len(data), numWritten)
+            return output, errors.New("didn't write full data on output; expected %d; wrote %d", len(data), numWritten)
         }
         if err != nil {
-            return output, errors.Wrap(err, "Error writing data to output")
+            return output, errors.Wrap(err, "error writing data to output")
         }
     }
 }
@@ -75,10 +75,10 @@ func (d Decoder) readData(messageLen uint16) ([]byte, error) {
         numRead, err := d.r.Read(readBuf)
 
         if err != nil {
-            return nil, errors.Wrap(err, "An error occurred reading from stream")
+            return nil, errors.Wrap(err, "an error occurred reading from stream")
         }
         if numRead == 0 {
-            return nil, errors.Wrap(err, "Couldn't read expected bytes for message. Read: %d Expected: %d.", totalRead, messageLen)
+            return nil, errors.Wrap(err, "couldn't read expected bytes for message; read %d; expected %d", totalRead, messageLen)
         }
         output = append(output, readBuf[:numRead]...)
 
@@ -102,7 +102,7 @@ func (d Decoder) decode(buffer *bytes.Buffer) (interface{}, error) {
 
     marker, err := buffer.ReadByte()
     if err != nil {
-        return nil, errors.Wrap(err, "Error reading marker")
+        return nil, errors.Wrap(err, "error reading marker")
     }
 
     // Here we have to get the marker as an int to check and see
@@ -110,7 +110,7 @@ func (d Decoder) decode(buffer *bytes.Buffer) (interface{}, error) {
     var markerInt int8
     err = binary.Read(bytes.NewBuffer([]byte{marker}), binary.BigEndian, &markerInt)
     if err != nil {
-        return nil, errors.Wrap(err, "Error reading marker as int8 from bolt message")
+        return nil, errors.Wrap(err, "error reading marker as int8 from bolt message")
     }
 
     switch {
@@ -161,19 +161,19 @@ func (d Decoder) decode(buffer *bytes.Buffer) (interface{}, error) {
     case marker == String8Marker:
         var size int8
         if err := binary.Read(buffer, binary.BigEndian, &size); err != nil {
-            return nil, errors.Wrap(err, "An error occurred reading string size")
+            return nil, errors.Wrap(err, "an error occurred reading string size")
         }
         return string(buffer.Next(int(size))), nil
     case marker == String16Marker:
         var size int16
         if err := binary.Read(buffer, binary.BigEndian, &size); err != nil {
-            return nil, errors.Wrap(err, "An error occurred reading string size")
+            return nil, errors.Wrap(err, "an error occurred reading string size")
         }
         return string(buffer.Next(int(size))), nil
     case marker == String32Marker:
         var size int32
         if err := binary.Read(buffer, binary.BigEndian, &size); err != nil {
-            return nil, errors.Wrap(err, "An error occurred reading string size")
+            return nil, errors.Wrap(err, "an error occurred reading string size")
         }
         return string(buffer.Next(int(size))), nil
 
@@ -184,19 +184,19 @@ func (d Decoder) decode(buffer *bytes.Buffer) (interface{}, error) {
     case marker == Slice8Marker:
         var size int8
         if err := binary.Read(buffer, binary.BigEndian, &size); err != nil {
-            return nil, errors.Wrap(err, "An error occurred reading slice size")
+            return nil, errors.Wrap(err, "an error occurred reading slice size")
         }
         return d.decodeSlice(buffer, int(size))
     case marker == Slice16Marker:
         var size int16
         if err := binary.Read(buffer, binary.BigEndian, &size); err != nil {
-            return nil, errors.Wrap(err, "An error occurred reading slice size")
+            return nil, errors.Wrap(err, "an error occurred reading slice size")
         }
         return d.decodeSlice(buffer, int(size))
     case marker == Slice32Marker:
         var size int32
         if err := binary.Read(buffer, binary.BigEndian, &size); err != nil {
-            return nil, errors.Wrap(err, "An error occurred reading slice size")
+            return nil, errors.Wrap(err, "an error occurred reading slice size")
         }
         return d.decodeSlice(buffer, int(size))
 
@@ -207,19 +207,19 @@ func (d Decoder) decode(buffer *bytes.Buffer) (interface{}, error) {
     case marker == Map8Marker:
         var size int8
         if err := binary.Read(buffer, binary.BigEndian, &size); err != nil {
-            return nil, errors.Wrap(err, "An error occurred reading map size")
+            return nil, errors.Wrap(err, "an error occurred reading map size")
         }
         return d.decodeMap(buffer, int(size))
     case marker == Map16Marker:
         var size int16
         if err := binary.Read(buffer, binary.BigEndian, &size); err != nil {
-            return nil, errors.Wrap(err, "An error occurred reading map size")
+            return nil, errors.Wrap(err, "an error occurred reading map size")
         }
         return d.decodeMap(buffer, int(size))
     case marker == Map32Marker:
         var size int32
         if err := binary.Read(buffer, binary.BigEndian, &size); err != nil {
-            return nil, errors.Wrap(err, "An error occurred reading map size")
+            return nil, errors.Wrap(err, "an error occurred reading map size")
         }
         return d.decodeMap(buffer, int(size))
 
@@ -230,18 +230,18 @@ func (d Decoder) decode(buffer *bytes.Buffer) (interface{}, error) {
     case marker == Struct8Marker:
         var size int8
         if err := binary.Read(buffer, binary.BigEndian, &size); err != nil {
-            return nil, errors.Wrap(err, "An error occurred reading struct size")
+            return nil, errors.Wrap(err, "an error occurred reading struct size")
         }
         return d.decodeStruct(buffer, int(size))
     case marker == Struct16Marker:
         var size int16
         if err := binary.Read(buffer, binary.BigEndian, &size); err != nil {
-            return nil, errors.Wrap(err, "An error occurred reading struct size")
+            return nil, errors.Wrap(err, "an error occurred reading struct size")
         }
         return d.decodeStruct(buffer, int(size))
 
     default:
-        return nil, errors.New("Unrecognized marker byte!: %x", marker)
+        return nil, errors.New("unrecognized marker byte; %x", marker)
     }
 
 }
@@ -273,7 +273,7 @@ func (d Decoder) decodeMap(buffer *bytes.Buffer, size int) (map[string]interface
 
         key, ok := keyInt.(string)
         if !ok {
-            return nil, errors.New("Unexpected key type: %T with value %+v", keyInt, keyInt)
+            return nil, errors.New("unexpected key type %T; with value %+v", keyInt, keyInt)
         }
         mapp[key] = val
     }
@@ -285,7 +285,7 @@ func (d Decoder) decodeStruct(buffer *bytes.Buffer, size int) (interface{}, erro
 
     signature, err := buffer.ReadByte()
     if err != nil {
-        return nil, errors.Wrap(err, "An error occurred reading struct signature byte")
+        return nil, errors.Wrap(err, "an error occurred reading struct signature byte")
     }
 
     switch signature {
@@ -314,7 +314,7 @@ func (d Decoder) decodeStruct(buffer *bytes.Buffer, size int) (interface{}, erro
     case messages.ResetMessageSignature:
         return d.decodeResetMessage(buffer)
     default:
-        return nil, errors.New("Unrecognized type decoding struct with signature %x", signature)
+        return nil, errors.New("unrecognized type decoding struct with signature; %x", signature)
     }
 }
 
@@ -333,7 +333,7 @@ func (d Decoder) decodeNode(buffer *bytes.Buffer) (graph.Node, error) {
     }
     labelIntSlice, ok := labelInt.([]interface{})
     if !ok {
-        return node, errors.New("Expected: Labels []string, but got %T %+v", labelInt, labelInt)
+        return node, errors.New("expected labels []string, but got; %T %+v", labelInt, labelInt)
     }
     node.Labels, err = sliceInterfaceToString(labelIntSlice)
     if err != nil {
@@ -346,7 +346,7 @@ func (d Decoder) decodeNode(buffer *bytes.Buffer) (graph.Node, error) {
     }
     node.Properties, ok = propertiesInt.(map[string]interface{})
     if !ok {
-        return node, errors.New("Expected: Properties map[string]interface{}, but got %T %+v", propertiesInt, propertiesInt)
+        return node, errors.New("expected properties map[string]interface{}, but got; %T %+v", propertiesInt, propertiesInt)
     }
 
     return node, nil
@@ -381,7 +381,7 @@ func (d Decoder) decodeRelationship(buffer *bytes.Buffer) (graph.Relationship, e
     }
     rel.Type, ok = typeInt.(string)
     if !ok {
-        return rel, errors.New("Expected: Type string, but got %T %+v", typeInt, typeInt)
+        return rel, errors.New("expected type string, but got; %T %+v", typeInt, typeInt)
     }
 
     propertiesInt, err := d.decode(buffer)
@@ -390,7 +390,7 @@ func (d Decoder) decodeRelationship(buffer *bytes.Buffer) (graph.Relationship, e
     }
     rel.Properties, ok = propertiesInt.(map[string]interface{})
     if !ok {
-        return rel, errors.New("Expected: Properties map[string]interface{}, but got %T %+v", propertiesInt, propertiesInt)
+        return rel, errors.New("expected properties map[string]interface{}, but got; %T %+v", propertiesInt, propertiesInt)
     }
 
     return rel, nil
@@ -405,7 +405,7 @@ func (d Decoder) decodePath(buffer *bytes.Buffer) (graph.Path, error) {
     }
     nodesIntSlice, ok := nodesInt.([]interface{})
     if !ok {
-        return path, errors.New("Expected: Nodes []Node, but got %T %+v", nodesInt, nodesInt)
+        return path, errors.New("expected nodes []Node, but got; %T %+v", nodesInt, nodesInt)
     }
     path.Nodes, err = sliceInterfaceToNode(nodesIntSlice)
     if err != nil {
@@ -418,7 +418,7 @@ func (d Decoder) decodePath(buffer *bytes.Buffer) (graph.Path, error) {
     }
     relsIntSlice, ok := relsInt.([]interface{})
     if !ok {
-        return path, errors.New("Expected: Relationships []Relationship, but got %T %+v", relsInt, relsInt)
+        return path, errors.New("expected relationships []Relationship, but got; %T %+v", relsInt, relsInt)
     }
     path.Relationships, err = sliceInterfaceToUnboundRelationship(relsIntSlice)
     if err != nil {
@@ -431,7 +431,7 @@ func (d Decoder) decodePath(buffer *bytes.Buffer) (graph.Path, error) {
     }
     seqIntSlice, ok := seqInt.([]interface{})
     if !ok {
-        return path, errors.New("Expected: Sequence []int, but got %T %+v", seqInt, seqInt)
+        return path, errors.New("expected sequence []int, but got; %T %+v", seqInt, seqInt)
     }
     path.Sequence, err = sliceInterfaceToInt(seqIntSlice)
 
@@ -454,7 +454,7 @@ func (d Decoder) decodeUnboundRelationship(buffer *bytes.Buffer) (graph.UnboundR
     }
     rel.Type, ok = typeInt.(string)
     if !ok {
-        return rel, errors.New("Expected: Type string, but got %T %+v", typeInt, typeInt)
+        return rel, errors.New("expected type string, but got; %T %+v", typeInt, typeInt)
     }
 
     propertiesInt, err := d.decode(buffer)
@@ -463,7 +463,7 @@ func (d Decoder) decodeUnboundRelationship(buffer *bytes.Buffer) (graph.UnboundR
     }
     rel.Properties, ok = propertiesInt.(map[string]interface{})
     if !ok {
-        return rel, errors.New("Expected: Properties map[string]interface{}, but got %T %+v", propertiesInt, propertiesInt)
+        return rel, errors.New("expected properties map[string]interface{}, but got; %T %+v", propertiesInt, propertiesInt)
     }
 
     return rel, nil
@@ -476,7 +476,7 @@ func (d Decoder) decodeRecordMessage(buffer *bytes.Buffer) (messages.RecordMessa
     }
     fields, ok := fieldsInt.([]interface{})
     if !ok {
-        return messages.RecordMessage{}, errors.New("Expected: Fields []interface{}, but got %T %+v", fieldsInt, fieldsInt)
+        return messages.RecordMessage{}, errors.New("expected fields []interface{}, but got; %T %+v", fieldsInt, fieldsInt)
     }
 
     return messages.NewRecordMessage(fields), nil
@@ -489,7 +489,7 @@ func (d Decoder) decodeFailureMessage(buffer *bytes.Buffer) (messages.FailureMes
     }
     metadata, ok := metadataInt.(map[string]interface{})
     if !ok {
-        return messages.FailureMessage{}, errors.New("Expected: Metadata map[string]interface{}, but got %T %+v", metadataInt, metadataInt)
+        return messages.FailureMessage{}, errors.New("expected metadata map[string]interface{}, but got; %T %+v", metadataInt, metadataInt)
     }
 
     return messages.NewFailureMessage(metadata), nil
@@ -506,7 +506,7 @@ func (d Decoder) decodeSuccessMessage(buffer *bytes.Buffer) (messages.SuccessMes
     }
     metadata, ok := metadataInt.(map[string]interface{})
     if !ok {
-        return messages.SuccessMessage{}, errors.New("Expected: Metadata map[string]interface{}, but got %T %+v", metadataInt, metadataInt)
+        return messages.SuccessMessage{}, errors.New("expected metadata map[string]interface{}, but got; %T %+v", metadataInt, metadataInt)
     }
 
     return messages.NewSuccessMessage(metadata), nil

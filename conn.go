@@ -101,7 +101,7 @@ func newBoltConn(connStr string, driver *boltDriver) (*boltConn, error) {
     c.driver = driver
 
     if err := c.initialize(); err != nil {
-        return nil, errors.Wrap(err, "An error occurred initializing connection")
+        return nil, errors.Wrap(err, "an error occurred initializing connection")
     }
 
     return c, nil
@@ -119,10 +119,10 @@ func newPooledBoltConn(connStr string, driver DriverPool) (*boltConn, error) {
 func (c *boltConn) parseURL() (*url.URL, error) {
     boltURL, err := url.Parse(c.connStr)
     if err != nil {
-        return nil, errors.Wrap(err, "An error occurred parsing bolt URL")
+        return nil, errors.Wrap(err, "an error occurred parsing bolt URL")
     }
     if strings.ToLower(boltURL.Scheme) != "bolt" {
-        return nil, errors.New("Unsupported connection string scheme: %s. Driver only supports 'bolt' scheme.",
+        return nil, errors.New("unsupported connection string scheme %s; driver only supports 'bolt' scheme",
             boltURL.Scheme)
     }
 
@@ -131,7 +131,7 @@ func (c *boltConn) parseURL() (*url.URL, error) {
         var isSet bool
         c.password, isSet = boltURL.User.Password()
         if !isSet {
-            return nil, errors.New("Must specify password when passing user")
+            return nil, errors.New("must specify password when passing user")
         }
     }
 
@@ -139,7 +139,7 @@ func (c *boltConn) parseURL() (*url.URL, error) {
     if timeout != "" {
         timeoutInt, err := strconv.Atoi(timeout)
         if err != nil {
-            return nil, errors.New("Invalid format for timeout: %s.  Must be integer", timeout)
+            return nil, errors.New("invalid format for timeout %s;  must be an integer", timeout)
         }
 
         c.timeout = time.Duration(timeoutInt) * time.Second
@@ -156,19 +156,19 @@ func (c *boltConn) parseURL() (*url.URL, error) {
         c.tlsNoVerify = strings.HasPrefix(strings.ToLower(noVerify), "t") || noVerify == "1"
     }
 
-    log.Trace("Bolt Host: ", boltURL.Host)
-    log.Trace("Timeout: ", c.timeout)
+    log.Trace("bolt host ", boltURL.Host)
+    log.Trace("timeout ", c.timeout)
     if len(c.user) > 0 {
-        log.Trace("User: ", c.user)
+        log.Trace("user ", c.user)
     }
     if len(c.password) > 0 {
-        log.Trace("Password: ", strings.Repeat("*", len(c.password)))
+        log.Trace("password ", strings.Repeat("*", len(c.password)))
     }
-    log.Trace("TLS: ", c.useTLS)
-    log.Trace("TLS No Verify: ", c.tlsNoVerify)
-    log.Trace("Cert File: ", c.certFile)
-    log.Trace("Key File: ", c.keyFile)
-    log.Trace("CA Cert File: ", c.caCertFile)
+    log.Trace("TLS ", c.useTLS)
+    log.Trace("TLS No Verify ", c.tlsNoVerify)
+    log.Trace("Cert File ", c.certFile)
+    log.Trace("Key File ", c.keyFile)
+    log.Trace("CA Cert File ", c.caCertFile)
 
     return boltURL, nil
 }
@@ -178,23 +178,23 @@ func (c *boltConn) createConn() (net.Conn, error) {
     var err error
     c.url, err = c.parseURL()
     if err != nil {
-        return nil, errors.Wrap(err, "An error occurred parsing the conn URL")
+        return nil, errors.Wrap(err, "an error occurred parsing the connection URL")
     }
 
     var conn net.Conn
     if c.useTLS {
         config, err := c.tlsConfig()
         if err != nil {
-            return nil, errors.Wrap(err, "An error occurred setting up TLS configuration")
+            return nil, errors.Wrap(err, "an error occurred setting up TLS configuration")
         }
         conn, err = tls.Dial("tcp", c.url.Host, config)
         if err != nil {
-            return nil, errors.Wrap(err, "An error occurred dialing to neo4j")
+            return nil, errors.Wrap(err, "an error occurred dialing to neo4j")
         }
     } else {
         conn, err = net.DialTimeout("tcp", c.url.Host, c.timeout)
         if err != nil {
-            return nil, errors.Wrap(err, "An error occurred dialing to neo4j")
+            return nil, errors.Wrap(err, "an error occurred while dialing to neo4j")
         }
     }
 
@@ -221,7 +221,7 @@ func (c *boltConn) tlsConfig() (*tls.Config, error) {
 
     if c.certFile != "" {
         if c.keyFile == "" {
-            return nil, errors.New("If you're providing a cert file, you must also provide a key file")
+            return nil, errors.New("if you're providing a cert file, you must also provide a key file")
         }
 
         cert, err := tls.LoadX509KeyPair(c.certFile, c.keyFile)
@@ -243,22 +243,22 @@ func (c *boltConn) handShake() error {
 
     numWritten, err := c.Write(handShake)
     if numWritten != 20 {
-        log.Errorf("Couldn't write expected bytes for magic preamble + supported versions. Written: %d. Expected: 4", numWritten)
+        log.Errorf("couldn't write expected bytes for magic preamble + supported versions; written %d; expected 4", numWritten)
         if err != nil {
-            err = errors.Wrap(err, "An error occurred writing magic preamble + supported versions")
+            err = errors.Wrap(err, "an error occurred writing magic preamble + supported versions")
         }
         return err
     }
 
     numRead, err := c.Read(c.serverVersion)
     if numRead != 4 {
-        log.Errorf("Could not read server version response. Read %d bytes. Expected 4 bytes. Output: %s", numRead, c.serverVersion)
+        log.Errorf("could not read server version response; read %d bytes; expected 4 bytes; output %s", numRead, c.serverVersion)
         if err != nil {
-            err = errors.Wrap(err, "An error occurred reading server version")
+            err = errors.Wrap(err, "an error occurred reading server version")
         }
         return err
     } else if bytes.Equal(c.serverVersion, noVersionSupported) {
-        return errors.New("Server responded with no supported version")
+        return errors.New("server responded with no supported version")
     }
 
     return nil
@@ -277,7 +277,7 @@ func (c *boltConn) initialize() error {
         if err != nil {
             // Return the connection back into the pool
             if e := c.Close(); e != nil {
-                log.Errorf("An error occurred closing connection: %s", e)
+                log.Errorf("an error occurred closing connection; %v", e)
             }
             return err
         }
@@ -287,7 +287,7 @@ func (c *boltConn) initialize() error {
         if err != nil {
             // Return the connection back into the pool
             if e := c.Close(); e != nil {
-                log.Errorf("An error occurred closing connection: %s", e)
+                log.Errorf("an error occurred closing connection; %v", e)
             }
             return err
         }
@@ -295,7 +295,7 @@ func (c *boltConn) initialize() error {
 
     if err := c.handShake(); err != nil {
         if e := c.Close(); e != nil {
-            log.Errorf("An error occurred closing connection: %s", e)
+            log.Errorf("an error occurred closing connection; %v", e)
         }
         return err
     }
@@ -303,18 +303,18 @@ func (c *boltConn) initialize() error {
     respInt, err := c.sendInit()
     if err != nil {
         if e := c.Close(); e != nil {
-            log.Errorf("An error occurred closing connection: %s", e)
+            log.Errorf("an error occurred closing connection; %v", e)
         }
         return err
     }
 
     switch resp := respInt.(type) {
     case messages.SuccessMessage:
-        log.Infof("Successfully initiated Bolt connection: %+v", resp)
+        log.Infof("successfully initiated Bolt connection; %+v", resp)
         return nil
     default:
-        log.Errorf("Got an unrecognized message when initializing connection :%+v", resp)
-        c.connErr = errors.New("Unrecognized response from the server: %#v", resp)
+        log.Errorf("got an unrecognized message when initializing connection; %+v", resp)
+        c.connErr = errors.New("unrecognized response from the server; %#v", resp)
         c.Close()
         return driver.ErrBadConn
     }
@@ -323,18 +323,18 @@ func (c *boltConn) initialize() error {
 // Read reads the data from the underlying connection
 func (c *boltConn) Read(b []byte) (n int, err error) {
     if err := c.conn.SetReadDeadline(time.Now().Add(c.timeout)); err != nil {
-        c.connErr = errors.Wrap(err, "An error occurred setting read deadline")
+        c.connErr = errors.Wrap(err, "an error occurred setting read deadline")
         return 0, driver.ErrBadConn
     }
 
     n, err = c.conn.Read(b)
 
     if log.GetLevel() >= log.TraceLevel {
-        log.Tracef("Read %d bytes from stream:\n\n%s\n", n, sprintByteHex(b))
+        log.Tracef("read %d bytes from stream; %s", n, sprintByteHex(b))
     }
 
     if err != nil && err != io.EOF {
-        c.connErr = errors.Wrap(err, "An error occurred reading from stream")
+        c.connErr = errors.Wrap(err, "an error occurred reading from stream")
         err = driver.ErrBadConn
     }
     return n, err
@@ -343,18 +343,18 @@ func (c *boltConn) Read(b []byte) (n int, err error) {
 // Write writes the data to the underlying connection
 func (c *boltConn) Write(b []byte) (n int, err error) {
     if err := c.conn.SetWriteDeadline(time.Now().Add(c.timeout)); err != nil {
-        c.connErr = errors.Wrap(err, "An error occurred setting write deadline")
+        c.connErr = errors.Wrap(err, "an error occurred setting write deadline")
         return 0, driver.ErrBadConn
     }
 
     n, err = c.conn.Write(b)
 
     if log.GetLevel() >= log.TraceLevel {
-        log.Tracef("Wrote %d of %d bytes to stream:\n\n%s\n", len(b), n, sprintByteHex(b[:n]))
+        log.Tracef("wrote %d of %d bytes to stream; %s", len(b), n, sprintByteHex(b[:n]))
     }
 
     if err != nil {
-        c.connErr = errors.Wrap(err, "An error occurred writing to stream")
+        c.connErr = errors.Wrap(err, "an error occurred writing to stream")
         err = driver.ErrBadConn
     }
     return n, err
@@ -376,7 +376,7 @@ func (c *boltConn) Close() error {
 
     if c.transaction != nil {
         if err := c.transaction.Rollback(); err != nil {
-            return errors.Wrap(err, "Error rolling back transaction when closing connection")
+            return errors.Wrap(err, "error rolling back transaction when closing connection")
         }
     }
 
@@ -384,8 +384,8 @@ func (c *boltConn) Close() error {
         // If using connection pooling, don't close connection, just reclaim it
         err := c.poolDriver.reclaim(c)
         if err != nil {
-            log.Errorf("An error occurred reclaiming connection for pool: %s", err)
-            c.connErr = errors.Wrap(err, "An error occurred closing the connection")
+            log.Errorf("an error occurred reclaiming connection for pool; %v", err)
+            c.connErr = errors.Wrap(err, "an error occurred closing the connection")
             return driver.ErrBadConn
         }
         return nil
@@ -393,14 +393,14 @@ func (c *boltConn) Close() error {
 
     if c.conn == nil {
         c.closed = true
-        c.connErr = fmt.Errorf("No connection to database")
+        c.connErr = fmt.Errorf("no connection to database")
         return driver.ErrBadConn
     }
 
     err := c.conn.Close()
     c.closed = true
     if err != nil {
-        c.connErr = errors.Wrap(err, "An error occurred closing the connection")
+        c.connErr = errors.Wrap(err, "an error occurred closing the connection")
         return driver.ErrBadConn
     }
 
@@ -408,33 +408,33 @@ func (c *boltConn) Close() error {
 }
 
 func (c *boltConn) ackFailure(failure messages.FailureMessage) error {
-    log.Infof("Acknowledging Failure: %#v", failure)
+    log.Infof("acknowledging failure; %#v", failure)
 
     ack := messages.NewAckFailureMessage()
     err := encoding.NewEncoder(c, c.chunkSize).Encode(ack)
     if err != nil {
-        return errors.Wrap(err, "An error occurred encoding ack failure message")
+        return errors.Wrap(err, "an error occurred encoding ack failure message")
     }
 
     for {
         respInt, err := encoding.NewDecoder(c).Decode()
         if err != nil {
-            return errors.Wrap(err, "An error occurred decoding ack failure message response")
+            return errors.Wrap(err, "an error occurred decoding ack failure message response")
         }
 
         switch resp := respInt.(type) {
         case messages.IgnoredMessage:
-            log.Infof("Got ignored message when acking failure: %#v", resp)
+            log.Infof("got ignored message when acking failure; %#v", resp)
             continue
         case messages.SuccessMessage:
-            log.Infof("Got success message when acking failure: %#v", resp)
+            log.Infof("got success message when acking failure; %#v", resp)
             return nil
         case messages.FailureMessage:
-            log.Errorf("Got failure message when acking failure: %#v", resp)
+            log.Errorf("got failure message when acking failure; %#v", resp)
             return c.reset()
         default:
-            log.Errorf("Got unrecognized response from acking failure: %#v", resp)
-            c.connErr = errors.New("Got unrecognized response from acking failure: %#v. CLOSING SESSION!", resp)
+            log.Errorf("got unrecognized response from acking failure; %#v", resp)
+            c.connErr = errors.New("got unrecognized response from acking failure; %#v; closing session", resp)
             c.Close()
             return driver.ErrBadConn
         }
@@ -442,36 +442,36 @@ func (c *boltConn) ackFailure(failure messages.FailureMessage) error {
 }
 
 func (c *boltConn) reset() error {
-    log.Info("Resetting session")
+    log.Info("resetting session")
 
     reset := messages.NewResetMessage()
     if err := encoding.NewEncoder(c, c.chunkSize).Encode(reset); err != nil {
-        return errors.Wrap(err, "An error occurred encoding reset message")
+        return errors.Wrap(err, "an error occurred encoding reset message")
     }
 
     for {
         respInt, err := encoding.NewDecoder(c).Decode()
         if err != nil {
-            return errors.Wrap(err, "An error occurred decoding reset message response")
+            return errors.Wrap(err, "an error occurred decoding reset message response")
         }
 
         switch resp := respInt.(type) {
         case messages.IgnoredMessage:
-            log.Infof("Got ignored message when resetting session: %#v", resp)
+            log.Infof("got ignored message when resetting session; %#v", resp)
             continue
         case messages.SuccessMessage:
-            log.Infof("Got success message when resetting session: %#v", resp)
+            log.Infof("got success message when resetting session; %#v", resp)
             return nil
         case messages.FailureMessage:
-            log.Errorf("Got failure message when resetting session: %#v", resp)
+            log.Errorf("got failure message when resetting session; %#v", resp)
             err = c.Close()
             if err != nil {
-                log.Errorf("An error occurred closing the session: %s", err)
+                log.Errorf("an error occurred closing the session; %s", err)
             }
-            return errors.Wrap(resp, "Error resetting session. CLOSING SESSION!")
+            return errors.Wrap(resp, "error resetting session; closing session")
         default:
-            log.Errorf("Got unrecognized response from resetting session: %#v", resp)
-            c.connErr = errors.New("Got unrecognized response from resetting session: %#v. CLOSING SESSION!", resp)
+            log.Errorf("got unrecognized response from resetting session; %#v", resp)
+            c.connErr = errors.New("got unrecognized response from resetting session; %#v; closing session", resp)
             c.Close()
             return driver.ErrBadConn
         }
@@ -491,10 +491,10 @@ func (c *boltConn) PrepareNeo(query string) (Stmt, error) {
 // PreparePipeline prepares a new pipeline statement for a query.
 func (c *boltConn) PreparePipeline(queries ...string) (PipelineStmt, error) {
     if c.statement != nil {
-        return nil, errors.New("An open statement already exists")
+        return nil, errors.New("an open statement already exists")
     }
     if c.closed {
-        return nil, errors.New("Connection already closed")
+        return nil, errors.New("connection already closed")
     }
     c.statement = newPipelineStmt(queries, c)
     return c.statement, nil
@@ -502,10 +502,10 @@ func (c *boltConn) PreparePipeline(queries ...string) (PipelineStmt, error) {
 
 func (c *boltConn) prepare(query string) (*boltStmt, error) {
     if c.statement != nil {
-        return nil, errors.New("An open statement already exists")
+        return nil, errors.New("an open statement already exists")
     }
     if c.closed {
-        return nil, errors.New("Connection already closed")
+        return nil, errors.New("connection already closed")
     }
     c.statement = newStmt(query, c)
     return c.statement, nil
@@ -514,33 +514,33 @@ func (c *boltConn) prepare(query string) (*boltStmt, error) {
 // Begin begins a new transaction with the Neo4J Database
 func (c *boltConn) Begin() (driver.Tx, error) {
     if c.transaction != nil {
-        return nil, errors.New("An open transaction already exists")
+        return nil, errors.New("an open transaction already exists")
     }
     if c.statement != nil {
-        return nil, errors.New("Cannot open a transaction when you already have an open statement")
+        return nil, errors.New("cannot open a transaction when you already have an open statement")
     }
     if c.closed {
-        return nil, errors.New("Connection already closed")
+        return nil, errors.New("connection already closed")
     }
 
     successInt, pullInt, err := c.sendRunPullAllConsumeSingle("BEGIN", nil)
     if err != nil {
-        return nil, errors.Wrap(err, "An error occurred beginning transaction")
+        return nil, errors.Wrap(err, "an error occurred beginning transaction")
     }
 
     success, ok := successInt.(messages.SuccessMessage)
     if !ok {
-        return nil, errors.New("Unrecognized response type beginning transaction: %#v", success)
+        return nil, errors.New("unrecognized response type beginning transaction; %#v", success)
     }
 
-    log.Infof("Got success message beginning transaction: %#v", success)
+    log.Infof("got success message beginning transaction; %#v", success)
 
     success, ok = pullInt.(messages.SuccessMessage)
     if !ok {
-        return nil, errors.New("Unrecognized response type pulling transaction:  %#v", success)
+        return nil, errors.New("unrecognized response type pulling transaction; %#v", success)
     }
 
-    log.Infof("Got success message pulling transaction: %#v", success)
+    log.Infof("got success message pulling transaction; %#v", success)
 
     return newTx(c), nil
 }
@@ -556,7 +556,7 @@ func (c *boltConn) SetTimeout(timeout time.Duration) {
 }
 
 func (c *boltConn) consume() (interface{}, error) {
-    log.Info("Consuming response from bolt stream")
+    log.Info("consuming response from bolt stream")
 
     respInt, err := encoding.NewDecoder(c).Decode()
     if err != nil {
@@ -564,23 +564,23 @@ func (c *boltConn) consume() (interface{}, error) {
     }
 
     if log.GetLevel() >= log.TraceLevel {
-        log.Tracef("Consumed Response: %#v", respInt)
+        log.Tracef("consumed response; %#v", respInt)
     }
 
     if failure, isFail := respInt.(messages.FailureMessage); isFail {
-        log.Errorf("Got failure message: %#v", failure)
+        log.Errorf("got failure message; %#v", failure)
         err := c.ackFailure(failure)
         if err != nil {
             return nil, err
         }
-        return failure, errors.Wrap(failure, "Neo4J reported a failure for the query")
+        return failure, errors.Wrap(failure, "neo4J reported a failure for the query")
     }
 
     return respInt, err
 }
 
 func (c *boltConn) consumeAll() ([]interface{}, interface{}, error) {
-    log.Info("Consuming all responses until success/failure")
+    log.Info("consuming all responses until success/failure")
 
     responses := []interface{}{}
     for {
@@ -590,7 +590,7 @@ func (c *boltConn) consumeAll() ([]interface{}, interface{}, error) {
         }
 
         if success, isSuccess := respInt.(messages.SuccessMessage); isSuccess {
-            log.Infof("Got success message: %#v", success)
+            log.Infof("got success message; %#v", success)
             return responses, success, nil
         }
 
@@ -599,7 +599,7 @@ func (c *boltConn) consumeAll() ([]interface{}, interface{}, error) {
 }
 
 func (c *boltConn) consumeAllMultiple(mult int) ([][]interface{}, []interface{}, error) {
-    log.Infof("Consuming all responses %d times until success/failure", mult)
+    log.Infof("consuming all responses %d times until success/failure", mult)
 
     responses := make([][]interface{}, mult)
     successes := make([]interface{}, mult)
@@ -618,21 +618,21 @@ func (c *boltConn) consumeAllMultiple(mult int) ([][]interface{}, []interface{},
 }
 
 func (c *boltConn) sendInit() (interface{}, error) {
-    log.Infof("Sending INIT Message. ClientID: %s User: %s", ClientID, c.user)
+    log.Infof("sending init message; client-id %s; User %s", ClientID, c.user)
 
     initMessage := messages.NewInitMessage(ClientID, c.user, c.password)
     if err := encoding.NewEncoder(c, c.chunkSize).Encode(initMessage); err != nil {
-        return nil, errors.Wrap(err, "An error occurred sending init message")
+        return nil, errors.Wrap(err, "an error occurred sending init message")
     }
 
     return c.consume()
 }
 
 func (c *boltConn) sendRun(query string, args map[string]interface{}) error {
-    log.Infof("Sending RUN message: query %s (args: %#v)", query, args)
+    log.Infof("sending run message; query %s (args %#v)", query, args)
     runMessage := messages.NewRunMessage(query, args)
     if err := encoding.NewEncoder(c, c.chunkSize).Encode(runMessage); err != nil {
-        return errors.Wrap(err, "An error occurred running query")
+        return errors.Wrap(err, "an error occurred running query")
     }
 
     return nil
@@ -647,11 +647,11 @@ func (c *boltConn) sendRunConsume(query string, args map[string]interface{}) (in
 }
 
 func (c *boltConn) sendPullAll() error {
-    log.Infof("Sending PULL_ALL message")
+    log.Infof("sending pull all message")
 
     pullAllMessage := messages.NewPullAllMessage()
     if err := encoding.NewEncoder(c, c.chunkSize).Encode(pullAllMessage); err != nil {
-        return errors.Wrap(err, "An error occurred encoding pull all query")
+        return errors.Wrap(err, "an error occurred encoding pull all query")
     }
 
     return nil
@@ -710,11 +710,11 @@ func (c *boltConn) sendRunPullAllConsumeAll(query string, args map[string]interf
 }
 
 func (c *boltConn) sendDiscardAll() error {
-    log.Infof("Sending DISCARD_ALL message")
+    log.Infof("sending discard all message")
 
     discardAllMessage := messages.NewDiscardAllMessage()
     if err := encoding.NewEncoder(c, c.chunkSize).Encode(discardAllMessage); err != nil {
-        return errors.Wrap(err, "An error occurred encoding discard all query")
+        return errors.Wrap(err, "an error occurred encoding discard all query")
     }
 
     return nil
@@ -771,10 +771,10 @@ func (c *boltConn) QueryNeoAll(query string, params map[string]interface{}) ([][
 
 func (c *boltConn) queryNeo(query string, params map[string]interface{}) (*boltRows, error) {
     if c.statement != nil {
-        return nil, errors.New("An open statement already exists")
+        return nil, errors.New("an open statement already exists")
     }
     if c.closed {
-        return nil, errors.New("Connection already closed")
+        return nil, errors.New("connection already closed")
     }
 
     c.statement = newStmt(query, c)
@@ -788,7 +788,7 @@ func (c *boltConn) queryNeo(query string, params map[string]interface{}) (*boltR
     success, ok := successResp.(messages.SuccessMessage)
     if !ok {
         c.statement.Close()
-        return nil, errors.New("Unexpected response querying neo from connection: %#v", successResp)
+        return nil, errors.New("unexpected response querying neo from connection; %#v", successResp)
     }
 
     c.statement.rows = newQueryRows(c.statement, success.Metadata)
@@ -797,10 +797,10 @@ func (c *boltConn) queryNeo(query string, params map[string]interface{}) (*boltR
 
 func (c *boltConn) QueryPipeline(queries []string, params ...map[string]interface{}) (PipelineRows, error) {
     if c.statement != nil {
-        return nil, errors.New("An open statement already exists")
+        return nil, errors.New("an open statement already exists")
     }
     if c.closed {
-        return nil, errors.New("Connection already closed")
+        return nil, errors.New("connection already closed")
     }
 
     c.statement = newPipelineStmt(queries, c)
@@ -819,10 +819,10 @@ func (c *boltConn) QueryPipeline(queries []string, params ...map[string]interfac
 // You must bolt encode a map to pass as []bytes for the driver value
 func (c *boltConn) Exec(query string, args []driver.Value) (driver.Result, error) {
     if c.statement != nil {
-        return nil, errors.New("An open statement already exists")
+        return nil, errors.New("an open statement already exists")
     }
     if c.closed {
-        return nil, errors.New("Connection already closed")
+        return nil, errors.New("connection already closed")
     }
 
     stmt := newStmt(query, c)
@@ -834,10 +834,10 @@ func (c *boltConn) Exec(query string, args []driver.Value) (driver.Result, error
 // ExecNeo executes a query that returns no rows. Implements a Neo-friendly alternative to sql/driver.
 func (c *boltConn) ExecNeo(query string, params map[string]interface{}) (Result, error) {
     if c.statement != nil {
-        return nil, errors.New("An open statement already exists")
+        return nil, errors.New("an open statement already exists")
     }
     if c.closed {
-        return nil, errors.New("Connection already closed")
+        return nil, errors.New("connection already closed")
     }
 
     stmt := newStmt(query, c)
@@ -848,10 +848,10 @@ func (c *boltConn) ExecNeo(query string, params map[string]interface{}) (Result,
 
 func (c *boltConn) ExecPipeline(queries []string, params ...map[string]interface{}) ([]Result, error) {
     if c.statement != nil {
-        return nil, errors.New("An open statement already exists")
+        return nil, errors.New("an open statement already exists")
     }
     if c.closed {
-        return nil, errors.New("Connection already closed")
+        return nil, errors.New("connection already closed")
     }
 
     stmt := newPipelineStmt(queries, c)
