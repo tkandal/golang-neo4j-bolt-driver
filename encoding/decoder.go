@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"github.com/tkandal/golang-neo4j-bolt-driver/buffer"
 	"github.com/tkandal/golang-neo4j-bolt-driver/errors"
+	"github.com/tkandal/golang-neo4j-bolt-driver/log"
 	"github.com/tkandal/golang-neo4j-bolt-driver/structures/graph"
 	"github.com/tkandal/golang-neo4j-bolt-driver/structures/messages"
 	"io"
@@ -70,6 +71,7 @@ func (d Decoder) read(output *bytes.Buffer) (*bytes.Buffer, error) {
 }
 
 func (d Decoder) readData(output *bytes.Buffer, messageLen int64) error {
+	log.Infof("***** message-length = %d", messageLen)
 	totalRead, err := io.CopyN(output, d.r, messageLen)
 	if err != nil {
 		return errors.Wrap(err, "an error occurred reading from stream")
