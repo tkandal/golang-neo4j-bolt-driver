@@ -203,7 +203,8 @@ func TestBoltStmt_InvalidArgs(t *testing.T) {
 	}
 	_, err = stmt.QueryNeo(args)
 
-	expected := "Neo4j only supports a subset of Cypher types for storage as singleton or array properties. Please refer to section cypher/syntax/values of the manual for more details."
+	// expected := "Neo4j only supports a subset of Cypher types for storage as singleton or array properties. Please refer to section cypher/syntax/values of the manual for more details."
+	expected := "Property values can only be of primitive types or arrays thereof."
 	if !strings.Contains(err.Error(), expected) {
 		t.Fatalf("Did not recieve expected error: %s", err)
 	}

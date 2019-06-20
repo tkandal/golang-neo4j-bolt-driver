@@ -17,7 +17,7 @@ type Error struct {
 // New makes a new error
 func New(msg string, args ...interface{}) *Error {
     return &Error{
-        msg:   fmt.Sprintf(msg, args...),
+        msg:   fmt.Sprintf(msg+"\n", args...),
         stack: debug.Stack(),
         level: 0,
     }
