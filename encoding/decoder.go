@@ -39,8 +39,8 @@ func Unmarshal(b []byte) (interface{}, error) {
 // Read out the object bytes to decode
 func (d Decoder) read(output *bytes.Buffer) (*bytes.Buffer, error) {
 	// output := &bytes.Buffer{}
+	lengthBytes := make([]byte, 2)
 	for {
-		lengthBytes := make([]byte, 2)
 		if numRead, err := io.ReadFull(d.r, lengthBytes); numRead != 2 {
 			return nil, errors.Wrap(err, "couldn't read expected bytes for message length; read %d; expected 2", numRead)
 		}
@@ -52,21 +52,35 @@ func (d Decoder) read(output *bytes.Buffer) (*bytes.Buffer, error) {
 			return output, nil
 		}
 
-		data, err := d.readData(messageLen)
+		err := d.readData(output, int64(messageLen))
 		if err != nil {
 			return output, errors.Wrap(err, "an error occurred reading message data")
 		}
 
+		/*
 		numWritten, err := output.Write(data)
 		if numWritten < len(data) {
 			return output, errors.New("didn't write full data on output; expected %d; wrote %d", len(data), numWritten)
 		}
+		 */
 		if err != nil {
 			return output, errors.Wrap(err, "error writing data to output")
 		}
 	}
 }
 
+func (d Decoder) readData(output *bytes.Buffer, messageLen int64) error {
+	totalRead, err := io.CopyN(output, d.r, messageLen)
+	if err != nil {
+		return errors.Wrap(err, "an error occurred reading from stream")
+	}
+	if totalRead != messageLen {
+		return errors.Wrap(err, "couldn't read expected bytes for message; read %d; expected %d", totalRead, messageLen)
+	}
+	return nil
+}
+
+/*
 func (d Decoder) readData(messageLen uint16) ([]byte, error) {
 	output := make([]byte, messageLen)
 	totalRead := uint16(0)
@@ -89,6 +103,7 @@ func (d Decoder) readData(messageLen uint16) ([]byte, error) {
 
 	return output, nil
 }
+*/
 
 // Decode decodes the stream to an object
 func (d Decoder) Decode() (interface{}, error) {
